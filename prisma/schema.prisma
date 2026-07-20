@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 1. USER MODEL (Handles Students, Teachers, and Admins)
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  password      String    // In a real app, this will be hashed!
+  role          Role      @default(STUDENT)
+  xp            Int       @default(0)
+  level         Int       @default(1)
+  streak        Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  progress      Progress[]
+  badges        UserBadge[]
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+// 2. COURSE MODEL
+model Course {
+  id            String    @id @default(cuid())
+  title         String
+  slug          String    @unique // e.g., "matematika"
+  description   String
+  emoji         String
+  color         String    // Tailwind color class
+  isLocked      Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  
+  // Relations
+  lessons       Lesson[]
+}
+
+// 3. LESSON MODEL
+model Lesson {
+  id            String    @id @default(cuid())
+  title         String
+  content       String    // The actual text/material of the lesson
+  courseId      String
+  course        Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  // Relations
+  progress      Progress[]
+}
+
+// 4. PROGRESS MODEL (Tracks which lessons a user has completed)
+model Progress {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId      String
+  lesson        Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  completed     Boolean   @default(false)
+  score         Int?      // For quiz scores
+  completedAt   DateTime?
+
+  @@unique([userId, lessonId]) // A user can only have one progress record per lesson
+}
+
+// 5. BADGE MODEL
+model Badge {
+  id            String    @id @default(cuid())
+  name          String
+  slug          String    @unique
+  description   String
+  icon          String
+  
+  // Relations
+  users         UserBadge[]
+}
+
+model UserBadge {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeId       String
+  badge         Badge     @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  earnedAt      DateTime  @default(now())
+
+  @@unique([userId, badgeId])
+}
