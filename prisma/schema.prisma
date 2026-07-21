@@ -9,20 +9,24 @@ datasource db {
 
 // 1. USER MODEL (Handles Students, Teachers, and Admins)
 model User {
-  id            String    @id @default(cuid())
-  name          String
-  email         String    @unique
-  password      String    // In a real app, this will be hashed!
-  role          Role      @default(STUDENT)
-  xp            Int       @default(0)
-  level         Int       @default(1)
-  streak        Int       @default(0)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                  String    @id @default(cuid())
+  name                String
+  email               String    @unique
+  password            String    
+  role                Role      @default(STUDENT)
+  xp                  Int       @default(0)
+  level               Int       @default(1)
+  streak              Int       @default(0)
 
-  // Relations
-  progress      Progress[]
-  badges        UserBadge[]
+  isVerified          Boolean   @default(false)
+  verificationToken   String?   @unique // Stores the 6-digit OTP
+  tokenExpiresAt      DateTime? 
+  
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  progress            Progress[]
+  badges              UserBadge[]
 }
 
 enum Role {
