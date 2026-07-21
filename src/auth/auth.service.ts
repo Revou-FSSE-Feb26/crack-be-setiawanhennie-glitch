@@ -12,7 +12,7 @@ export class AuthService {
   constructor(private jwtService: JwtService) {}
 
   // 1. REGISTER
-  async register(name: string, email: string, password: string) {
+  async register(name: string, email: string, password: string, school?: string, className?: string) {
     // Check if user exists
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) throw new BadRequestException('Email sudah terdaftar');
@@ -32,6 +32,8 @@ export class AuthService {
         password: hashedPassword,
         verificationToken: otp,
         tokenExpiresAt,
+        school,
+        className,
       },
     });
 

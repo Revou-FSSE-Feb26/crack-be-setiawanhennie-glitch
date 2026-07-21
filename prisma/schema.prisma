@@ -17,6 +17,8 @@ model User {
   xp                  Int       @default(0)
   level               Int       @default(1)
   streak              Int       @default(0)
+  school              String?   
+  className           String?   
 
   isVerified          Boolean   @default(false)
   verificationToken   String?   @unique // Stores the 6-digit OTP
