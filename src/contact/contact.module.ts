@@ -1,6 +1,9 @@
-import { ContactModule } from './contact/contact.module';
+import { Module } from '@nestjs/common';
+import { ContactController } from './contact.controller';
+import { ContactService } from './contact.service';
 
 @Module({
-  imports: [CoursesModule, AuthModule, ContactModule],
+  controllers: [ContactController],
+  providers: [ContactService],
 })
-export class AppModule {}
+export class ContactModule {}
