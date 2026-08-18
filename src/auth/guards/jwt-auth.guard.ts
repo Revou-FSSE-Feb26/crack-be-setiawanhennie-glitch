@@ -1,6 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
+import { prisma } from 'src/lib/prisma';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -15,10 +16,27 @@ export class JwtAuthGuard implements CanActivate {
       const payload = await this.jwtService.verifyAsync(token, {
         secret: process.env.JWT_SECRET,
       });
-      request.user = { id: payload.sub, email: payload.email, role: payload.role };
-    } catch {
+
+      const userRecord = await prisma.user.findUnique({ 
+        where: { id: payload.sub } 
+      });
+      
+      if (!userRecord || userRecord.isSuspended) {
+        throw new UnauthorizedException('Akun Anda ditangguhkan.');
+      }
+
+      request.user = { 
+        id: payload.sub, 
+        email: payload.email, 
+        role: payload.role 
+      };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
       throw new UnauthorizedException('Token tidak valid atau kedaluwarsa');
     }
+    
     return true;
   }
 

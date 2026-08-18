@@ -4,69 +4,68 @@ import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { Resend } from 'resend';
 
-const prisma = new PrismaClient();
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 @Injectable()
 export class AuthService {
-  constructor(private jwtService: JwtService) {}
+  private prisma: PrismaClient;
+  private resend: Resend;
 
-  // 1. REGISTER
-  async register(
-  name: string, email: string, password: string, 
-  school?: string, className?: string, role?: string
-) {
-  const safeRole = role === 'TEACHER' ? 'TEACHER' : 'STUDENT';
-
-  const existingUser = await prisma.user.findUnique({ where: { email } });
-  if (existingUser) throw new BadRequestException('Email sudah terdaftar');
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  const tokenExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
-
-  const user = await prisma.user.create({
-    data: {
-      name,
-      email,
-      password: hashedPassword,
-      school,
-      className,
-      role: safeRole,
-      verificationToken: otp,
-      tokenExpiresAt,
-    },
-  });
-
-    // Send Email via Resend
-    await resend.emails.send({
-      from: 'NusaSkillz <support@nusaskillz.id>',
-      to: email,
-      subject: 'Kode Verifikasi NusaSkillz Anda',
-      html: `
-        <h1>Halo ${name}!</h1>
-        <p>Terima kasih telah bergabung dengan NusaSkillz.</p>
-        <p>Gunakan kode berikut untuk memverifikasi email Anda:</p>
-        <h2 style="background: #f4f4f4; padding: 10px; text-align: center; letter-spacing: 5px;">${otp}</h2>
-        <p>Kode ini akan kedaluwarsa dalam 15 menit.</p>
-      `,
-    });
-
-    return { message: 'Pendaftaran berhasil! Silakan cek email Anda untuk kode verifikasi.' };
+  constructor(private jwtService: JwtService) {
+    this.prisma = new PrismaClient();
+    this.resend = new Resend(process.env.RESEND_API_KEY);
   }
 
-  // 2. VERIFY EMAIL
+  async register(name: string, email: string, password: string, school?: string, className?: string, role?: string) {
+    const safeRole = role === 'TEACHER' ? 'TEACHER' : 'STUDENT';
+    const existingUser = await this.prisma.user.findUnique({ where: { email } });
+    
+    if (existingUser) throw new BadRequestException('Email sudah terdaftar');
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const hashedOtp = await bcrypt.hash(otp, 10); // Hash OTP
+    const tokenExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    const user = await this.prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        school,
+        className,
+        role: safeRole,
+        verificationToken: hashedOtp,
+        tokenExpiresAt,
+      },
+    });
+
+    try {
+      await this.resend.emails.send({
+        from: 'NusaSkillz <onboarding@resend.dev>',
+        to: email,
+        subject: 'Kode Verifikasi NusaSkillz Anda',
+        html: `...`,
+      });
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError);
+      await this.prisma.user.delete({ where: { id: user.id } });
+      throw new BadRequestException('Gagal mengirim email verifikasi. Silakan coba lagi.');
+    }
+
+    return { message: 'Registrasi berhasil. Silakan cek email Anda.' };
+  }
+
   async verifyEmail(email: string, otp: string) {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    
     if (!user) throw new BadRequestException('User tidak ditemukan');
     if (user.isVerified) throw new BadRequestException('Email sudah terverifikasi');
 
-    if (user.verificationToken !== otp || user.tokenExpiresAt < new Date()) {
+    const isValidOtp = await bcrypt.compare(otp, user.verificationToken);
+    if (!isValidOtp || user.tokenExpiresAt < new Date()) {
       throw new BadRequestException('Kode OTP salah atau kedaluwarsa');
     }
 
-    // Mark as verified and clear token
-    await prisma.user.update({
+    await this.prisma.user.update({
       where: { id: user.id },
       data: { 
         isVerified: true, 
@@ -78,9 +77,9 @@ export class AuthService {
     return { message: 'Email berhasil diverifikasi! Silakan login.' };
   }
 
-  // 3. LOGIN
   async login(email: string, password: string) {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    
     if (!user) throw new UnauthorizedException('Email atau password salah');
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -90,7 +89,10 @@ export class AuthService {
       throw new UnauthorizedException('Email belum terverifikasi. Silakan cek email Anda.');
     }
 
-    // Generate JWT Token
+    if (user.isSuspended) {
+      throw new UnauthorizedException('Akun Anda ditangguhkan. Silakan hubungi support@nusaskillz.id untuk informasi lebih lanjut.');
+    }
+
     const payload = { 
       sub: user.id,
       email: user.email, 

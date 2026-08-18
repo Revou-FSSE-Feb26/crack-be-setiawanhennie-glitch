@@ -26,4 +26,10 @@ export class UsersController {
   toggleSuspend(@Param('id') id: string, @Body('suspend') suspend: boolean) {
     return this.usersService.toggleSuspend(id, suspend);
   }
+
+  @Get('stats')
+  @Roles('ADMIN')
+  getStats() {
+    return this.usersService.getStats();
+  }
 }
