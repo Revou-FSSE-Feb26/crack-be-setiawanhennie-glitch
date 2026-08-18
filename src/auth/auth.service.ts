@@ -12,34 +12,35 @@ export class AuthService {
   constructor(private jwtService: JwtService) {}
 
   // 1. REGISTER
-  async register(name: string, email: string, password: string, school?: string, className?: string) {
-    // Check if user exists
-    const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser) throw new BadRequestException('Email sudah terdaftar');
+  async register(
+  name: string, email: string, password: string, 
+  school?: string, className?: string, role?: string
+) {
+  const safeRole = role === 'TEACHER' ? 'TEACHER' : 'STUDENT';
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+  const existingUser = await prisma.user.findUnique({ where: { email } });
+  if (existingUser) throw new BadRequestException('Email sudah terdaftar');
 
-    // Generate 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const tokenExpiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const tokenExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
-    // Save user to DB
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        verificationToken: otp,
-        tokenExpiresAt,
-        school,
-        className,
-      },
-    });
+  const user = await prisma.user.create({
+    data: {
+      name,
+      email,
+      password: hashedPassword,
+      school,
+      className,
+      role: safeRole,
+      verificationToken: otp,
+      tokenExpiresAt,
+    },
+  });
 
     // Send Email via Resend
     await resend.emails.send({
-      from: 'NusaSkillz <onboarding@resend.dev>', // Use your verified domain later
+      from: 'NusaSkillz <support@nusaskillz.id>',
       to: email,
       subject: 'Kode Verifikasi NusaSkillz Anda',
       html: `

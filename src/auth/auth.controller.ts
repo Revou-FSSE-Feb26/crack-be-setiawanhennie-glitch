@@ -1,13 +1,13 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { AuthService } from './auth.service';
 
-// Simple DTOs for validation (optional but good practice)
 class RegisterDto { 
   name: string; 
   email: string; 
   password: string; 
   school?: string;
   className?: string;
+  role?: 'STUDENT' | 'TEACHER';
 }
 
 class VerifyDto { email: string; otp: string; }
@@ -19,7 +19,9 @@ export class AuthController {
 
   @Post('register')
   async register(@Body() body: RegisterDto) {
-    return this.authService.register(body.name, body.email, body.password, body.school, body.className);
+    return this.authService.register(
+      body.name, body.email, body.password, body.school, body.className, body.role
+    );
   }
 
   @Post('verify')
