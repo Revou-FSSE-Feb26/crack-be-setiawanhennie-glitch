@@ -20,14 +20,11 @@ model User {
   streak              Int       @default(0)
   school              String?   
   className           String?   
-
   isVerified          Boolean   @default(false)
   verificationToken   String?   @unique // Stores the 6-digit OTP
   tokenExpiresAt      DateTime? 
-  
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
-
   progress            Progress[]
   badges              UserBadge[]
 }
@@ -42,15 +39,14 @@ enum Role {
 model Course {
   id            String    @id @default(cuid())
   title         String
-  slug          String    @unique // e.g., "matematika"
+  slug          String    @unique
   description   String
   emoji         String
-  color         String    // Tailwind color class
+  color         String   
   isLocked      Boolean   @default(false)
   createdAt     DateTime  @default(now())
-  
-  // Relations
   lessons       Lesson[]
+  isHidden            Boolean   @default(false)
 }
 
 // 3. LESSON MODEL
@@ -100,4 +96,18 @@ model UserBadge {
   earnedAt      DateTime  @default(now())
 
   @@unique([userId, badgeId])
+}
+
+// 6. REPORT MODEL
+model Report {
+  id          String    @id @default(cuid())
+  reporterId  String
+  targetType  String    // "CONTENT" | "USER"
+  targetId    String
+  reason      String
+  description String?
+  status      String    @default("OPEN")   // OPEN | RESOLVED | DISMISSED
+  actionTaken String?   // IGNORED | CONTENT_HIDDEN | USER_SUSPENDED
+  createdAt   DateTime  @default(now())
+  resolvedAt  DateTime?
 }

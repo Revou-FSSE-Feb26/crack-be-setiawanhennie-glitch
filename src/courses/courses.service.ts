@@ -8,6 +8,7 @@ export class CoursesService {
   // READ (Already done)
   async findAll() {
     return prisma.course.findMany({
+      where: { isHidden: false },
       include: { lessons: true },
     });
   }
