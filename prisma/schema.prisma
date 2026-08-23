@@ -46,7 +46,8 @@ model Course {
   isLocked      Boolean   @default(false)
   createdAt     DateTime  @default(now())
   lessons       Lesson[]
-  isHidden            Boolean   @default(false)
+  isHidden      Boolean   @default(false)
+  authorId      String? 
 }
 
 // 3. LESSON MODEL

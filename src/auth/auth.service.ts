@@ -22,7 +22,7 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const hashedOtp = await bcrypt.hash(otp, 10); // Hash OTP
+    const hashedOtp = await bcrypt.hash(otp, 10);
     const tokenExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
     const user = await this.prisma.user.create({
