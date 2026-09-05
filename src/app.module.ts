@@ -4,8 +4,9 @@ import { AuthModule } from './auth/auth.module';
 import { ContactModule } from './contact/contact.module';
 import { UsersModule } from './users/users.module';
 import { ModerationModule } from './moderation/moderation.module';
+import { TeacherModule } from './teacher/teacher.module';
 
 @Module({
-  imports: [CoursesModule, AuthModule, ContactModule, UsersModule, ModerationModule],
+  imports: [CoursesModule, AuthModule, ContactModule, UsersModule, ModerationModule, TeacherModule],
 })
 export class AppModule {}
