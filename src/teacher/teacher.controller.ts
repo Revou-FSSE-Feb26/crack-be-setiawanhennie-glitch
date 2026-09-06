@@ -52,7 +52,7 @@ export class TeacherController {
     return this.teacherService.createLesson(id, body);
   }
 
-    // 📄 Upload & extract document text
+    // Upload & extract document text
   @Post('extract')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -64,21 +64,33 @@ export class TeacherController {
     return this.teacherService.extractText(file);
   }
 
-  // 👁️ View lesson
+  // View lesson
   @Get('lessons/:id')
   getLesson(@Param('id') id: string) {
     return this.teacherService.getLesson(id);
   }
 
-  // ✏️ Edit lesson
+  // Edit lesson
   @Patch('lessons/:id')
   updateLesson(@Param('id') id: string, @Body() body: { title?: string; content?: string }) {
     return this.teacherService.updateLesson(id, body);
   }
 
-  // 🗑️ Delete lesson
+  // Delete lesson
   @Delete('lessons/:id')
   deleteLesson(@Param('id') id: string) {
     return this.teacherService.deleteLesson(id);
+  }
+
+  // Image upload (for lessons, courses, etc.)
+  @Post('upload')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+    }),
+  )
+  upload(@UploadedFile() file: any) {
+    return this.teacherService.uploadImage(file);
   }
 }

@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { supabase } from '../lib/supabase';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -223,5 +224,24 @@ export class TeacherService {
     const lesson = await prisma.lesson.findUnique({ where: { id } });
     if (!lesson) throw new NotFoundException('Pelajaran tidak ditemukan');
     return prisma.lesson.delete({ where: { id } });
+  }
+
+    // 📷 Upload image to Supabase Storage, return public URL
+  async uploadImage(file: any): Promise<{ url: string }> {
+    if (!file) throw new BadRequestException('Tidak ada file diunggah');
+    const ext = (file.originalname.split('.').pop() || 'png').toLowerCase();
+    if (!['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(ext)) {
+      throw new BadRequestException('Format gambar tidak didukung (png/jpg/webp/gif)');
+    }
+
+    const path = `lessons/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await supabase.storage
+      .from('lesson-assets')
+      .upload(path, file.buffer, { contentType: file.mimetype });
+
+    if (error) throw new BadRequestException('Gagal mengunggah gambar: ' + error.message);
+
+    const { data } = supabase.storage.from('lesson-assets').getPublicUrl(path);
+    return { url: data.publicUrl };
   }
 }
