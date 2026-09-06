@@ -19,21 +19,29 @@ export class QuizService {
       options?: string[];
       answer: string;
       points?: number;
+      pairs?: { left: string; right: string }[]; 
     }[];
   }) {
     if (!data.title?.trim()) throw new BadRequestException('Judul kuis wajib diisi');
     if (!data.questions?.length) throw new BadRequestException('Kuis butuh minimal 1 pertanyaan');
 
     for (const q of data.questions) {
-      if (!q.prompt?.trim() || !q.answer?.trim()) {
-        throw new BadRequestException('Setiap pertanyaan wajib punya soal dan jawaban');
+      if (!q.prompt?.trim()) throw new BadRequestException('Setiap pertanyaan wajib punya soal');
+
+      if (q.type === 'MULTIPLE_CHOICE' || q.type === 'TRUE_FALSE') {
+        if (!q.options || q.options.length < 2) throw new BadRequestException('Pilihan ganda butuh minimal 2 opsi');
+        if (!q.options.includes(q.answer)) throw new BadRequestException('Jawaban benar harus salah satu opsi');
       }
-      if (q.type !== 'FILL_BLANK') {
-        if (!q.options || q.options.length < 2) {
-          throw new BadRequestException('Pilihan ganda / benar-salah butuh minimal 2 opsi');
-        }
-        if (!q.options.includes(q.answer)) {
-          throw new BadRequestException('Jawaban benar harus salah satu dari opsi');
+      if (q.type === 'FILL_BLANK' || q.type === 'WORD_SCRAMBLE') {
+        if (!q.answer?.trim()) throw new BadRequestException('Jawaban wajib diisi');
+      }
+      if (q.type === 'ORDERING') {
+        if (!q.options || q.options.length < 3) throw new BadRequestException('Urutkan butuh minimal 3 item');
+      }
+      if (q.type === 'MATCHING') {
+        const pairs = q.pairs as { left: string; right: string }[] | undefined;
+        if (!pairs || pairs.length < 2 || pairs.some((p) => !p.left?.trim() || !p.right?.trim())) {
+          throw new BadRequestException('Menjodohkan butuh minimal 2 pasangan lengkap');
         }
       }
     }
@@ -49,8 +57,9 @@ export class QuizService {
           create: data.questions.map((q, i) => ({
             type: q.type,
             prompt: q.prompt.trim(),
-            options: q.type === 'FILL_BLANK' ? [] : q.options!.map((o) => o.trim()),
-            answer: q.answer.trim(),
+            options: (q.options ?? []).map((o) => String(o).trim()).filter(Boolean),
+            answer: (q.answer ?? '').trim(),
+            pairs: q.type === 'MATCHING' ? (q.pairs as any) : undefined,
             points: q.points ?? 10,
             order: i,
           })),
@@ -77,19 +86,34 @@ export class QuizService {
     return prisma.quiz.delete({ where: { id } });
   }
 
-  // 🎮 Student fetches a quiz — answers are NEVER sent to the client
+  // Student fetches a quiz — answers are NEVER sent to the client
   async getQuizForPlay(id: string) {
     const quiz = await prisma.quiz.findUnique({
       where: { id },
       include: {
         questions: {
-          select: { id: true, type: true, prompt: true, options: true, points: true, order: true },
+          select: { id: true, type: true, prompt: true, options: true, points: true, order: true, pairs: true },
           orderBy: { order: 'asc' },
         },
         lesson: { select: { title: true } },
       },
     });
     if (!quiz) throw new NotFoundException('Kuis tidak ditemukan');
+
+    quiz.questions = quiz.questions.map((q: any) => {
+      if (q.type === 'WORD_SCRAMBLE') {
+        const letters = q.answer.replace(/\s+/g, '').split('');
+        const scrambled = [...letters];
+        for (let i = scrambled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [scrambled[i], scrambled[j]] = [scrambled[j], scrambled[i]];
+        }
+        if (scrambled.join('') === letters.join('')) scrambled.reverse();
+        return { ...q, scrambled: scrambled.join(' ') }; 
+      }
+      return q;
+    });
+
     return quiz;
   }
 
@@ -115,10 +139,26 @@ export class QuizService {
       .sort((a, b) => a.order - b.order)
       .map((q) => {
         const given = answerMap.get(q.id) ?? '';
-        const isCorrect =
-          q.type === 'FILL_BLANK'
-            ? given.trim() !== '' && normalize(given) === normalize(q.answer)
-            : given.trim() === q.answer;
+        let isCorrect = false;
+        let displayAnswer = q.answer;
+
+        if (q.type === 'FILL_BLANK' || q.type === 'WORD_SCRAMBLE') {
+          isCorrect = given.trim() !== '' && normalize(given) === normalize(q.answer);
+        } else if (q.type === 'ORDERING') {
+          displayAnswer = q.options.join(' → ');
+          try {
+            isCorrect = Array.isArray(JSON.parse(given)) && JSON.parse(given).join('|') === q.options.join('|');
+          } catch { isCorrect = false; }
+        } else if (q.type === 'MATCHING') {
+          const correct = (q.pairs as any[]).map((p) => p.right);
+          displayAnswer = (q.pairs as any[]).map((p) => `${p.left} = ${p.right}`).join(', ');
+          try {
+            isCorrect = Array.isArray(JSON.parse(given)) && JSON.parse(given).join('|') === correct.join('|');
+          } catch { isCorrect = false; }
+        } else {
+          isCorrect = given.trim() === q.answer;
+        }
+
         if (isCorrect) {
           correct++;
           streak++;
@@ -126,7 +166,7 @@ export class QuizService {
         } else {
           streak = 0;
         }
-        return { questionId: q.id, correct: isCorrect, correctAnswer: q.answer };
+        return { questionId: q.id, correct: isCorrect, correctAnswer: displayAnswer };
       });
 
     const total = quiz.questions.length;
