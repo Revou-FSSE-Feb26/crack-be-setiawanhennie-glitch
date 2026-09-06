@@ -57,9 +57,8 @@ model Lesson {
   content       String    // The actual text/material of the lesson
   courseId      String
   course        Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  
-  // Relations
   progress      Progress[]
+  quizzes       Quiz[]
 }
 
 // 4. PROGRESS MODEL (Tracks which lessons a user has completed)
@@ -111,4 +110,35 @@ model Report {
   actionTaken String?   // IGNORED | CONTENT_HIDDEN | USER_SUSPENDED
   createdAt   DateTime  @default(now())
   resolvedAt  DateTime?
+}
+
+// 7. QUIZ MODELS (gamified quizzes — Phase 1)
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  FILL_BLANK
+}
+
+model Quiz {
+  id        String     @id @default(cuid())
+  title     String
+  lessonId  String?
+  lesson    Lesson?    @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  timeLimit Int?       // seconds per question (Kuis Cepat); null = santai
+  lives     Int?       // hearts; null = unlimited
+  xpReward  Int        @default(50)
+  questions Question[]
+  createdAt DateTime   @default(now())
+}
+
+model Question {
+  id      String       @id @default(cuid())
+  quizId  String
+  quiz    Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  type    QuestionType
+  prompt  String
+  options String[]     // choices for MCQ/TF; empty for FILL_BLANK
+  answer  String       // correct choice text / accepted answer
+  points  Int          @default(10)
+  order   Int          @default(0)
 }

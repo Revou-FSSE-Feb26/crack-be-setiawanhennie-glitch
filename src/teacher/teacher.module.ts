@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { TeacherController } from './teacher.controller';
 import { TeacherService } from './teacher.service';
+import { TeacherQuizController, PlayQuizController } from './quiz.controller';
+import { QuizService } from './quiz.service';
 
 @Module({
   imports: [
@@ -10,7 +12,7 @@ import { TeacherService } from './teacher.service';
       signOptions: { expiresIn: '7d' },
     }),
   ],
-  controllers: [TeacherController],
-  providers: [TeacherService],
+  controllers: [TeacherController, TeacherQuizController, PlayQuizController],
+  providers: [TeacherService, QuizService],
 })
 export class TeacherModule {}
