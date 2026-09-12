@@ -93,7 +93,16 @@ export class QuizService {
       where: { id },
       include: {
         questions: {
-          select: { id: true, type: true, prompt: true, options: true, points: true, order: true, pairs: true },
+          select: {
+            id: true,
+            type: true,
+            prompt: true,
+            options: true,
+            points: true,
+            order: true,
+            pairs: true,
+            answer: true, // 👈 needed server-side for scrambling, stripped below
+          },
           orderBy: { order: 'asc' },
         },
         lesson: { select: { title: true } },
@@ -102,17 +111,29 @@ export class QuizService {
     if (!quiz) throw new NotFoundException('Kuis tidak ditemukan');
 
     quiz.questions = quiz.questions.map((q: any) => {
-      if (q.type === 'WORD_SCRAMBLE') {
-        const letters = q.answer.replace(/\s+/g, '').split('');
-        const scrambled = [...letters];
-        for (let i = scrambled.length - 1; i > 0; i--) {
+      const { answer, ...safe } = q; // 🚫 raw answer NEVER leaves the server
+
+      if (q.type === 'ORDERING') {
+        const shuffled = [...q.options];
+        for (let i = shuffled.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
-          [scrambled[i], scrambled[j]] = [scrambled[j], scrambled[i]];
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
         }
-        if (scrambled.join('') === letters.join('')) scrambled.reverse();
-        return { ...q, scrambled: scrambled.join(' ') }; 
+        if (shuffled.join('|') === q.options.join('|')) shuffled.reverse();
+        return { ...safe, options: shuffled };
       }
-      return q;
+
+      if (q.type === 'WORD_SCRAMBLE') {
+        const letters = (answer ?? '').split('');
+        for (let i = letters.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [letters[i], letters[j]] = [letters[j], letters[i]];
+        }
+        if (letters.join('') === answer && letters.length > 1) letters.reverse();
+        return { ...safe, scrambledLetters: letters };
+      }
+
+      return safe;
     });
 
     return quiz;
