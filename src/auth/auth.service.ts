@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { Resend } from 'resend';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class AuthService {
@@ -109,5 +110,53 @@ export class AuthService {
         className: user.className,
       },
     };
+  }
+
+    async forgotPassword(email: string) {
+    const user = await prisma.user.findUnique({ where: { email } });
+    // Never reveal whether the account exists
+    if (user) {
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { resetToken: token, resetTokenExpiry: expiry },
+      });
+      const link = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
+      await this.resend.emails.send({
+        from: process.env.RESEND_FROM || 'NusaSkillz <onboarding@resend.dev>', // same as your OTP email
+        to: email,
+        subject: 'Reset Password NusaSkillz',
+        html: `
+          <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:24px">
+            <h2>🔑 Reset Password</h2>
+            <p>Halo ${user.name}, klik tombol di bawah untuk mengganti password Anda:</p>
+            <a href="${link}" style="display:inline-block;background:#6366f1;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold">
+              Reset Password
+            </a>
+            <p style="color:#888;font-size:12px;margin-top:16px">
+              Tautan berlaku 1 jam. Jika Anda tidak meminta ini, abaikan email ini.
+            </p>
+          </div>
+        `,
+      });
+    }
+    return { message: 'Jika email terdaftar, tautan reset telah dikirim.' };
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    const user = await prisma.user.findFirst({ where: { resetToken: token } });
+    if (!user || !user.resetTokenExpiry || user.resetTokenExpiry < new Date()) {
+      throw new BadRequestException('Tautan reset tidak valid atau kedaluwarsa');
+    }
+    if (!newPassword || newPassword.length < 8) {
+      throw new BadRequestException('Password minimal 8 karakter');
+    }
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashed, resetToken: null, resetTokenExpiry: null },
+    });
+    return { message: 'Password berhasil diubah. Silakan masuk.' };
   }
 }

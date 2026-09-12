@@ -93,4 +93,9 @@ export class TeacherController {
   upload(@UploadedFile() file: any) {
     return this.teacherService.uploadImage(file);
   }
+
+  @Patch('courses/:id/assignments')
+  updateAssignments(@Param('id') id: string, @Body('classes') classes: string[]) {
+    return this.teacherService.updateAssignments(id, classes ?? []);
+  }
 }

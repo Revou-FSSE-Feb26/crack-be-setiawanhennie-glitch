@@ -28,6 +28,8 @@ model User {
   progress            Progress[]
   badges              UserBadge[]
   lastActiveAt        DateTime?
+  resetToken          String?
+  resetTokenExpiry    DateTime?
 }
 
 enum Role {
@@ -48,7 +50,8 @@ model Course {
   createdAt     DateTime  @default(now())
   lessons       Lesson[]
   isHidden      Boolean   @default(false)
-  authorId      String? 
+  authorId      String?
+  assignments   CourseAssignment[]
 }
 
 // 3. LESSON MODEL
@@ -146,4 +149,14 @@ model Question {
   points  Int          @default(10)
   order   Int          @default(0)
   pairs   Json?
+}
+
+// 8. CLASS ASSIGNMENTS (teacher → class targeting)
+model CourseAssignment {
+  id         String   @id @default(cuid())
+  courseId   String
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  className  String
+  assignedAt DateTime @default(now())
+  @@unique([courseId, className])
 }

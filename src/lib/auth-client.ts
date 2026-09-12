@@ -48,3 +48,14 @@ function getToken(): string {
       ?.split('=')[1] ?? ''
   );
 }
+
+export async function updateCourseAssignments(courseId: string, classes: string[]) {
+  const token = getToken();
+  const res = await fetch(`${API_URL_BASE}/teacher/courses/${courseId}/assignments`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ classes }),
+  });
+  if (!res.ok) throw new Error('Gagal mengatur kelas tujuan');
+  return res.json();
+}

@@ -74,12 +74,32 @@ export class TeacherService {
     }));
   }
 
+    // 🎯 Change which classes a course is assigned to
+  async updateAssignments(courseId: string, classes: string[]) {
+    const course = await prisma.course.findUnique({ where: { id: courseId } });
+    if (!course) throw new NotFoundException('Kursus tidak ditemukan');
+    await prisma.$transaction([
+      prisma.courseAssignment.deleteMany({ where: { courseId } }),
+      ...(classes?.length
+        ? [
+            prisma.courseAssignment.createMany({
+              data: classes.map((c) => ({ courseId, className: c })),
+            }),
+          ]
+        : []),
+    ]);
+    return { ok: true };
+  }
+
   // 📖 Materi & Kuis: courses + their lessons
   async getMaterials() {
     return prisma.course.findMany({
       where: { isHidden: false },
       orderBy: { createdAt: 'asc' },
-      include: { lessons: { select: { id: true, title: true } } },
+      include: {
+        lessons: { select: { id: true, title: true } },
+        assignments: { select: { className: true }, orderBy: { className: 'asc' } }, // 👈 ADD
+      },
     });
   }
 
@@ -134,7 +154,7 @@ export class TeacherService {
   }
 
     // ➕ Create a new course
-  async createCourse(data: { title: string; description: string; emoji: string; color: string }) {
+  async createCourse(data: { title: string; description: string; emoji: string; color: string; classes?: string[] }) {
     if (!data.title?.trim() || !data.description?.trim()) {
       throw new BadRequestException('Judul dan deskripsi wajib diisi');
     }
@@ -143,7 +163,7 @@ export class TeacherService {
       '-' +
       Date.now().toString(36);
 
-    return prisma.course.create({
+    const course = await prisma.course.create({ 
       data: {
         title: data.title.trim(),
         description: data.description.trim(),
@@ -152,6 +172,14 @@ export class TeacherService {
         slug,
       },
     });
+
+    if (data.classes?.length) {
+      await prisma.courseAssignment.createMany({
+        data: data.classes.map((c) => ({ courseId: course.id, className: c })),
+      });
+    }
+
+    return course;
   }
 
   // ➕ Add a lesson to a course

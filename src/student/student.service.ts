@@ -23,7 +23,15 @@ export class StudentService {
         include: { badge: { select: { name: true, icon: true } } },
       }),
       prisma.course.findMany({
-        where: { isHidden: false },
+        where: {
+          isHidden: false,
+          OR: [
+            { assignments: { none: {} } }, // school-wide courses
+            ...(user.className
+              ? [{ assignments: { some: { className: user.className } } }]
+              : []),
+          ],
+        },
         include: { lessons: { select: { id: true, title: true } } },
         orderBy: { createdAt: 'asc' },
       }),
