@@ -21,12 +21,13 @@ model User {
   school              String?   
   className           String?   
   isVerified          Boolean   @default(false)
-  verificationToken   String?   @unique // Stores the 6-digit OTP
+  verificationToken   String?   @unique 
   tokenExpiresAt      DateTime? 
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
   progress            Progress[]
   badges              UserBadge[]
+  lastActiveAt        DateTime?
 }
 
 enum Role {

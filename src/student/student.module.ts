@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { StudentController } from './student.controller';
 import { StudentService } from './student.service';
+import { BadgeService } from '../badges/badges.service';
 
 @Module({
   imports: [
@@ -11,6 +12,6 @@ import { StudentService } from './student.service';
     }),
   ],
   controllers: [StudentController],
-  providers: [StudentService],
+  providers: [StudentService, BadgeService],
 })
 export class StudentModule {}

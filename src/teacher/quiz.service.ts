@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaClient, QuestionType } from '@prisma/client';
+import { BadgeService } from '../badges/badges.service';
 
 const prisma = new PrismaClient();
 
@@ -7,6 +8,7 @@ const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
 
 @Injectable()
 export class QuizService {
+  constructor(private readonly badgeService: BadgeService) {}
   async createQuiz(data: {
     title: string;
     lessonId?: string;
@@ -199,8 +201,8 @@ export class QuizService {
         },
       });
     }
-
-    return { correct, total, score, xpEarned, maxStreak, results };
+    const newBadges = await this.badgeService.evaluate(userId, { score, maxStreak });
+    return { correct, total, score, xpEarned, maxStreak, results, newBadges };
   }
 
     // Grade a single question (used by the live "Periksa" button)

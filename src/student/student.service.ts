@@ -1,10 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { BADGES, BadgeService } from '../badges/badges.service';
 
 const prisma = new PrismaClient();
 
 @Injectable()
 export class StudentService {
+  constructor(private readonly badgeService: BadgeService) {}
   async getStats(userId: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -60,6 +62,7 @@ export class StudentService {
       completedLessons: completedIds.size,
       totalLessons,
       badges: badges.map((b) => ({ name: b.badge.name, icon: b.badge.icon })),
+      totalBadges: BADGES.length,
       courses: coursesOut,
       leaderboard: leaderboard.map((u, i) => ({
         rank: i + 1,
@@ -97,10 +100,12 @@ export class StudentService {
   async completeLesson(lessonId: string, userId: string) {
     const lesson = await prisma.lesson.findUnique({ where: { id: lessonId } });
     if (!lesson) throw new NotFoundException('Pelajaran tidak ditemukan');
-    return prisma.progress.upsert({
+    const progress = await prisma.progress.upsert({
       where: { userId_lessonId: { userId, lessonId } },
       update: { completed: true, completedAt: new Date() },
       create: { userId, lessonId, completed: true, completedAt: new Date() },
     });
+    const newBadges = await this.badgeService.evaluate(userId);
+    return { progress, newBadges };
   }
 }

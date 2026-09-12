@@ -4,6 +4,7 @@ import { TeacherController } from './teacher.controller';
 import { TeacherService } from './teacher.service';
 import { TeacherQuizController, PlayQuizController } from './quiz.controller';
 import { QuizService } from './quiz.service';
+import { BadgeService } from '../badges/badges.service';
 
 @Module({
   imports: [
@@ -13,6 +14,6 @@ import { QuizService } from './quiz.service';
     }),
   ],
   controllers: [TeacherController, TeacherQuizController, PlayQuizController],
-  providers: [TeacherService, QuizService],
+  providers: [TeacherService, QuizService, BadgeService],
 })
 export class TeacherModule {}
