@@ -1,7 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 
 // 🏅 All badge definitions — rules evaluated against player stats
 export const BADGES = [

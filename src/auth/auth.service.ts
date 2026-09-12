@@ -1,22 +1,20 @@
 import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { Resend } from 'resend';
 
 @Injectable()
 export class AuthService {
-  private prisma: PrismaClient;
   private resend: Resend;
 
   constructor(private jwtService: JwtService) {
-    this.prisma = new PrismaClient();
     this.resend = new Resend(process.env.RESEND_API_KEY);
   }
 
   async register(name: string, email: string, password: string, school?: string, className?: string, role?: string) {
     const safeRole = role === 'TEACHER' ? 'TEACHER' : 'STUDENT';
-    const existingUser = await this.prisma.user.findUnique({ where: { email } });
+    const existingUser = await prisma.user.findUnique({ where: { email } });
     
     if (existingUser) throw new BadRequestException('Email sudah terdaftar');
 
@@ -25,7 +23,7 @@ export class AuthService {
     const hashedOtp = await bcrypt.hash(otp, 10);
     const tokenExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
-    const user = await this.prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         name,
         email,
@@ -47,7 +45,7 @@ export class AuthService {
       });
     } catch (emailError) {
       console.error('Failed to send verification email:', emailError);
-      await this.prisma.user.delete({ where: { id: user.id } });
+      await prisma.user.delete({ where: { id: user.id } });
       throw new BadRequestException('Gagal mengirim email verifikasi. Silakan coba lagi.');
     }
 
@@ -55,7 +53,7 @@ export class AuthService {
   }
 
   async verifyEmail(email: string, otp: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { email } });
     
     if (!user) throw new BadRequestException('User tidak ditemukan');
     if (user.isVerified) throw new BadRequestException('Email sudah terverifikasi');
@@ -65,7 +63,7 @@ export class AuthService {
       throw new BadRequestException('Kode OTP salah atau kedaluwarsa');
     }
 
-    await this.prisma.user.update({
+    await prisma.user.update({
       where: { id: user.id },
       data: { 
         isVerified: true, 
@@ -78,7 +76,7 @@ export class AuthService {
   }
 
   async login(email: string, password: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { email } });
     
     if (!user) throw new UnauthorizedException('Email atau password salah');
 
