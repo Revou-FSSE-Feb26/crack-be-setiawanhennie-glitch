@@ -46,4 +46,9 @@ export class PlayQuizController {
   ) {
     return this.quizService.submitQuiz(id, req.user.id, answers);
   }
+
+  @Post(':id/check')
+  check(@Param('id') id: string, @Body() body: { questionId: string; answer: string }) {
+    return this.quizService.checkAnswer(id, body.questionId, body.answer);
+  }
 }

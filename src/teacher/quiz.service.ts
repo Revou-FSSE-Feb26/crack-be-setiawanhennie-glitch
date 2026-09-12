@@ -86,7 +86,6 @@ export class QuizService {
     return prisma.quiz.delete({ where: { id } });
   }
 
-  // Student fetches a quiz — answers are NEVER sent to the client
   async getQuizForPlay(id: string) {
     const quiz = await prisma.quiz.findUnique({
       where: { id },
@@ -202,5 +201,37 @@ export class QuizService {
     }
 
     return { correct, total, score, xpEarned, maxStreak, results };
+  }
+
+    // Grade a single question (used by the live "Periksa" button)
+  private gradeOne(q: any, given: string): { correct: boolean; displayAnswer: string } {
+    if (q.type === 'FILL_BLANK' || q.type === 'WORD_SCRAMBLE') {
+      return {
+        correct: given.trim() !== '' && normalize(given) === normalize(q.answer),
+        displayAnswer: q.answer,
+      };
+    }
+    if (q.type === 'ORDERING') {
+      let correct = false;
+      try {
+        correct = Array.isArray(JSON.parse(given)) && JSON.parse(given).join('|') === q.options.join('|');
+      } catch {}
+      return { correct, displayAnswer: q.options.join(' → ') };
+    }
+    if (q.type === 'MATCHING') {
+      const rights = (q.pairs as any[]).map((p) => p.right);
+      let correct = false;
+      try {
+        correct = Array.isArray(JSON.parse(given)) && JSON.parse(given).join('|') === rights.join('|');
+      } catch {}
+      return { correct, displayAnswer: (q.pairs as any[]).map((p) => `${p.left} = ${p.right}`).join(', ') };
+    }
+    return { correct: given.trim() === q.answer, displayAnswer: q.answer };
+  }
+
+  async checkAnswer(quizId: string, questionId: string, given: string) {
+    const q = await prisma.question.findUnique({ where: { id: questionId } });
+    if (!q || q.quizId !== quizId) throw new NotFoundException('Pertanyaan tidak ditemukan');
+    return this.gradeOne(q, given ?? '');
   }
 }

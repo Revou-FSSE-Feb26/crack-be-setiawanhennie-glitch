@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Req, UseGuards, Post } from '@nestjs/common';
 import { StudentService } from './student.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -15,5 +15,10 @@ export class StudentController {
   @Get('lessons/:id')
   getLesson(@Param('id') id: string) {
     return this.studentService.getLesson(id);
+  }
+
+  @Post('lessons/:id/complete')
+  completeLesson(@Param('id') id: string, @Req() req: any) {
+    return this.studentService.completeLesson(id, req.user.id);
   }
 }

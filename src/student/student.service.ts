@@ -50,6 +50,7 @@ export class StudentService {
         done,
         nextLesson: next?.title ?? null,
         nextLessonId: next?.id ?? null,
+        firstLessonId: c.lessons[0]?.id ?? null,
       };
     });
 
@@ -91,5 +92,15 @@ export class StudentService {
     });
     if (!lesson) throw new NotFoundException('Pelajaran tidak ditemukan');
     return lesson;
+  }
+
+  async completeLesson(lessonId: string, userId: string) {
+    const lesson = await prisma.lesson.findUnique({ where: { id: lessonId } });
+    if (!lesson) throw new NotFoundException('Pelajaran tidak ditemukan');
+    return prisma.progress.upsert({
+      where: { userId_lessonId: { userId, lessonId } },
+      update: { completed: true, completedAt: new Date() },
+      create: { userId, lessonId, completed: true, completedAt: new Date() },
+    });
   }
 }
