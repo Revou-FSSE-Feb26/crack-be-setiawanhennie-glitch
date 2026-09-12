@@ -171,14 +171,21 @@ export class QuizService {
 
     const total = quiz.questions.length;
     const score = Math.round((correct / total) * 100);
-    // XP = scaled reward + 5 bonus per consecutive correct after the first 🔥
     const xpEarned =
       Math.round(quiz.xpReward * (correct / total)) + Math.max(0, maxStreak - 1) * 5;
 
-    await prisma.user.update({
+    const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: { xp: { increment: xpEarned } },
     });
+    
+    const newLevel = Math.floor(updatedUser.xp / 500) + 1;
+    if (newLevel !== updatedUser.level) {
+      await prisma.user.update({ 
+        where: { id: userId }, 
+        data: { level: newLevel } 
+      });
+    }
 
     if (quiz.lessonId) {
       await prisma.progress.upsert({

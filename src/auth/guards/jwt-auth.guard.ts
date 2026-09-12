@@ -27,7 +27,6 @@ export class JwtAuthGuard implements CanActivate {
     if (!userRecord) throw new UnauthorizedException('Pengguna tidak ditemukan');
     if (userRecord.isSuspended) throw new UnauthorizedException('Akun Anda ditangguhkan.');
 
-    // 👈 Now every controller knows who AND which school
     request.user = {
       id: payload.sub,
       email: payload.email,
