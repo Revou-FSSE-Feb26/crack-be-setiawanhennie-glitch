@@ -36,6 +36,7 @@ enum Role {
   STUDENT
   TEACHER
   ADMIN
+  SUPER_ADMIN
 }
 
 // 2. COURSE MODEL
