@@ -6,8 +6,9 @@ import { UsersModule } from './users/users.module';
 import { ModerationModule } from './moderation/moderation.module';
 import { TeacherModule } from './teacher/teacher.module';
 import { StudentModule } from './student/student.module';
+import { SchoolModule } from './school/school.module';
 
 @Module({
-  imports: [CoursesModule, AuthModule, ContactModule, UsersModule, ModerationModule, TeacherModule, StudentModule],
+  imports: [CoursesModule, AuthModule, ContactModule, UsersModule, ModerationModule, TeacherModule, StudentModule, SchoolModule],
 })
 export class AppModule {}

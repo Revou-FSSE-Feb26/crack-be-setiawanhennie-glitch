@@ -160,3 +160,15 @@ model CourseAssignment {
   assignedAt DateTime @default(now())
   @@unique([courseId, className])
 }
+
+// 9. SCHOOLS (join codes + class lists)
+model School {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  code         String   @unique
+  address      String?
+  principal    String?
+  contactEmail String?
+  classList    String[]
+  createdAt    DateTime @default(now())
+}
