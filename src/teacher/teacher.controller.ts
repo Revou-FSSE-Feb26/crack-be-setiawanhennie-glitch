@@ -23,8 +23,8 @@ export class TeacherController {
   }
 
   @Get('materials')
-  getMaterials() {
-    return this.teacherService.getMaterials();
+  getMaterials(@Req() req: any) {
+    return this.teacherService.getMaterials(req.user.school);
   }
 
   @Get('grading')
@@ -39,9 +39,10 @@ export class TeacherController {
 
   @Post('courses')
   createCourse(
-    @Body() body: { title: string; description: string; emoji: string; color: string },
+    @Req() req: any,
+    @Body() body: { title: string; description: string; emoji: string; color: string; classes?: string[] },
   ) {
-    return this.teacherService.createCourse(body);
+    return this.teacherService.createCourse({ ...body, school: req.user.school });
   }
   
   @Post('courses/:id/lessons')

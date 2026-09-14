@@ -53,6 +53,7 @@ model Course {
   isHidden      Boolean   @default(false)
   authorId      String?
   assignments   CourseAssignment[]
+  school        String?
 }
 
 // 3. LESSON MODEL
@@ -137,6 +138,7 @@ model Quiz {
   xpReward  Int        @default(50)
   questions Question[]
   createdAt DateTime   @default(now())
+  school    String?
 }
 
 model Question {

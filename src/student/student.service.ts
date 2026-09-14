@@ -17,7 +17,9 @@ export class StudentService {
         where: { userId, completed: true },
         select: { lessonId: true },
       }),
-      prisma.lesson.count(),
+      prisma.lesson.count({
+        where: { course: user.school ? { school: user.school } : {} },
+      }),
       prisma.userBadge.findMany({
         where: { userId },
         include: { badge: { select: { name: true, icon: true } } },
@@ -25,8 +27,9 @@ export class StudentService {
       prisma.course.findMany({
         where: {
           isHidden: false,
+          ...(user.school ? { school: user.school } : {}),
           OR: [
-            { assignments: { none: {} } }, // school-wide courses
+            { assignments: { none: {} } },
             ...(user.className
               ? [{ assignments: { some: { className: user.className } } }]
               : []),

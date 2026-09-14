@@ -12,13 +12,13 @@ export class TeacherQuizController {
   constructor(private readonly quizService: QuizService) {}
 
   @Post()
-  create(@Body() body: any) {
-    return this.quizService.createQuiz(body);
+  create(@Req() req: any, @Body() body: any) {
+    return this.quizService.createQuiz({ ...body, school: req.user.school });
   }
 
   @Get()
-  list(@Query('lessonId') lessonId?: string) {
-    return this.quizService.listQuizzes(lessonId);
+  list(@Req() req: any, @Query('lessonId') lessonId?: string) {
+    return this.quizService.listQuizzes(lessonId, req.user.school);
   }
 
   @Delete(':id')

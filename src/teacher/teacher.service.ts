@@ -16,7 +16,7 @@ export class TeacherService {
           where: { ...scope, role: 'STUDENT', className: { not: null } },
           _count: { _all: true },
         }),
-        prisma.course.count({ where: { isHidden: false } }),
+        prisma.course.count({ where: { isHidden: false, ...scope } }),
         prisma.progress.aggregate({ where: activityScope, _avg: { score: true } }),
         prisma.progress.findMany({
           where: { completed: true, completedAt: { not: null }, ...activityScope },
@@ -92,9 +92,9 @@ export class TeacherService {
   }
 
   // 📖 Materi & Kuis: courses + their lessons
-  async getMaterials() {
+  async getMaterials(school?: string) {
     return prisma.course.findMany({
-      where: { isHidden: false },
+      where: { isHidden: false, ...(school ? { school } : {}) },
       orderBy: { createdAt: 'asc' },
       include: {
         lessons: { select: { id: true, title: true } },
@@ -154,7 +154,14 @@ export class TeacherService {
   }
 
     // ➕ Create a new course
-  async createCourse(data: { title: string; description: string; emoji: string; color: string; classes?: string[] }) {
+  async createCourse(data: {
+    title: string;
+    description: string;
+    emoji: string;
+    color: string;
+    classes?: string[];
+    school?: string;
+  }) {
     if (!data.title?.trim() || !data.description?.trim()) {
       throw new BadRequestException('Judul dan deskripsi wajib diisi');
     }
@@ -163,21 +170,23 @@ export class TeacherService {
       '-' +
       Date.now().toString(36);
 
-    const course = await prisma.course.create({ 
+    const classes = [...new Set((data.classes ?? []).map((c) => c.trim()).filter(Boolean))];
+
+    // Atomic: course + assignments in ONE write
+    const course = await prisma.course.create({
       data: {
         title: data.title.trim(),
         description: data.description.trim(),
         emoji: data.emoji || '📚',
         color: data.color || 'bg-blue-500/10',
         slug,
+        school: data.school ?? null,
+        assignments: classes.length
+          ? { create: classes.map((className) => ({ className })) }
+          : undefined,
       },
+      include: { assignments: true },
     });
-
-    if (data.classes?.length) {
-      await prisma.courseAssignment.createMany({
-        data: data.classes.map((c) => ({ courseId: course.id, className: c })),
-      });
-    }
 
     return course;
   }

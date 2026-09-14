@@ -7,8 +7,9 @@ import { ModerationModule } from './moderation/moderation.module';
 import { TeacherModule } from './teacher/teacher.module';
 import { StudentModule } from './student/student.module';
 import { SchoolModule } from './school/school.module';
+import { SuperModule } from './super/super.module';
 
 @Module({
-  imports: [CoursesModule, AuthModule, ContactModule, UsersModule, ModerationModule, TeacherModule, StudentModule, SchoolModule],
+  imports: [CoursesModule, AuthModule, ContactModule, UsersModule, ModerationModule, TeacherModule, StudentModule, SchoolModule, SuperModule],
 })
 export class AppModule {}

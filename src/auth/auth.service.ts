@@ -41,8 +41,19 @@ export class AuthService {
       await this.resend.emails.send({
         from: 'NusaSkillz <onboarding@resend.dev>',
         to: email,
-        subject: 'Kode Verifikasi NusaSkillz Anda',
-        html: `...`,
+        subject: 'Kode Verifikasi NusaSkillz',
+        html: `
+          <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:24px">
+            <h2 style="margin-bottom:8px">🎓 Kode Verifikasi NusaSkillz</h2>
+            <p>Halo ${name}, masukkan kode berikut di halaman verifikasi:</p>
+            <div style="background:#f3f4f6;border-radius:12px;padding:20px;text-align:center;margin:20px 0">
+              <span style="font-size:36px;font-weight:800;letter-spacing:10px;color:#6366f1">${otp}</span>
+            </div>
+            <p style="color:#888;font-size:12px;margin-top:16px">
+              Kode berlaku 15 menit. Jika kamu tidak mendaftar di NusaSkillz, abaikan email ini.
+            </p>
+          </div>
+        `,
       });
     } catch (emailError) {
       console.error('Failed to send verification email:', emailError);

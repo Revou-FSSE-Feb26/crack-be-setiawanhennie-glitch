@@ -1,8 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaClient, QuestionType } from '@prisma/client';
+import { QuestionType } from '@prisma/client';
 import { BadgeService } from '../badges/badges.service';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 
 const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
 
@@ -15,6 +14,7 @@ export class QuizService {
     timeLimit?: number | null;
     lives?: number | null;
     xpReward?: number;
+    school?: string;
     questions: {
       type: QuestionType;
       prompt: string;
@@ -55,6 +55,7 @@ export class QuizService {
         timeLimit: data.timeLimit ?? null,
         lives: data.lives ?? null,
         xpReward: data.xpReward ?? 50,
+        school: data.school ?? null,
         questions: {
           create: data.questions.map((q, i) => ({
             type: q.type,
@@ -71,9 +72,12 @@ export class QuizService {
     });
   }
 
-  async listQuizzes(lessonId?: string) {
+  async listQuizzes(lessonId?: string, school?: string) {
     return prisma.quiz.findMany({
-      where: lessonId ? { lessonId } : undefined,
+      where: {
+        ...(lessonId ? { lessonId } : {}),
+        ...(school ? { school } : {}),
+      },
       include: {
         _count: { select: { questions: true } },
         lesson: { select: { title: true } },
