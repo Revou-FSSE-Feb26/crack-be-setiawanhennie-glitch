@@ -143,7 +143,7 @@ export class QuizService {
     return quiz;
   }
 
-  // ✅ Grade submission, award XP + streak bonus, update Progress
+  // Grade submission, award XP + streak bonus, update Progress
   async submitQuiz(
     quizId: string,
     userId: string,
@@ -260,5 +260,87 @@ export class QuizService {
     const q = await prisma.question.findUnique({ where: { id: questionId } });
     if (!q || q.quizId !== quizId) throw new NotFoundException('Pertanyaan tidak ditemukan');
     return this.gradeOne(q, given ?? '');
+  }
+
+    // Teacher fetches a quiz WITH answers (for the editor)
+  async getQuizForEdit(id: string, school?: string) {
+    const quiz = await prisma.quiz.findUnique({
+      where: { id },
+      include: { questions: { orderBy: { order: 'asc' } } },
+    });
+    if (!quiz) throw new NotFoundException('Kuis tidak ditemukan');
+    if (school && quiz.school !== school) throw new NotFoundException('Kuis tidak ditemukan');
+    return quiz;
+  }
+
+  // Update quiz meta + replace all questions atomically
+  async updateQuiz(
+    id: string,
+    data: {
+      title: string;
+      lessonId?: string;
+      timeLimit?: number | null;
+      lives?: number | null;
+      xpReward?: number;
+      questions: {
+        type: any;
+        prompt: string;
+        options?: string[];
+        answer: string;
+        pairs?: { left: string; right: string }[];
+        points?: number;
+      }[];
+    },
+    school?: string,
+  ) {
+    const quiz = await prisma.quiz.findUnique({ where: { id } });
+    if (!quiz) throw new NotFoundException('Kuis tidak ditemukan');
+    if (school && quiz.school !== school) throw new NotFoundException('Kuis tidak ditemukan');
+
+    if (!data.title?.trim()) throw new BadRequestException('Judul kuis wajib diisi');
+    if (!data.questions?.length) throw new BadRequestException('Kuis butuh minimal 1 pertanyaan');
+    for (const q of data.questions) {
+      if (!q.prompt?.trim() || !q.answer?.trim()) throw new BadRequestException('Setiap pertanyaan wajib punya soal dan jawaban');
+      if (q.type === 'MULTIPLE_CHOICE' || q.type === 'TRUE_FALSE') {
+        if (!q.options || q.options.length < 2) throw new BadRequestException('Pilihan ganda butuh minimal 2 opsi');
+        if (!q.options.includes(q.answer)) throw new BadRequestException('Jawaban benar harus salah satu opsi');
+      }
+      if (q.type === 'ORDERING' && (!q.options || q.options.length < 3)) {
+        throw new BadRequestException('Urutkan butuh minimal 3 item');
+      }
+      if (q.type === 'MATCHING') {
+        const pairs = q.pairs as { left: string; right: string }[] | undefined;
+        if (!pairs || pairs.length < 2 || pairs.some((p) => !p.left?.trim() || !p.right?.trim())) {
+          throw new BadRequestException('Menjodohkan butuh minimal 2 pasangan lengkap');
+        }
+      }
+    }
+
+    return prisma.$transaction(async (tx) => {
+      const updated = await tx.quiz.update({
+        where: { id },
+        data: {
+          title: data.title.trim(),
+          lessonId: data.lessonId || null,
+          timeLimit: data.timeLimit ?? null,
+          lives: data.lives ?? null,
+          xpReward: data.xpReward ?? 50,
+        },
+      });
+      await tx.question.deleteMany({ where: { quizId: id } });
+      await tx.question.createMany({
+        data: data.questions.map((q, i) => ({
+          quizId: id,
+          type: q.type,
+          prompt: q.prompt.trim(),
+          options: (q.options ?? []).map((o) => String(o).trim()).filter(Boolean),
+          answer: (q.answer ?? '').trim(),
+          pairs: q.type === 'MATCHING' ? (q.pairs as any) : undefined,
+          points: q.points ?? 10,
+          order: i,
+        })),
+      });
+      return updated;
+    });
   }
 }

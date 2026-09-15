@@ -128,14 +128,14 @@ export class AuthService {
     // Never reveal whether the account exists
     if (user) {
       const token = crypto.randomBytes(32).toString('hex');
-      const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+      const expiry = new Date(Date.now() + 15 * 60 * 1000); 
       await prisma.user.update({
         where: { id: user.id },
         data: { resetToken: token, resetTokenExpiry: expiry },
       });
       const link = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
       await this.resend.emails.send({
-        from: process.env.RESEND_FROM || 'NusaSkillz <onboarding@resend.dev>', // same as your OTP email
+        from: process.env.RESEND_FROM || 'NusaSkillz <onboarding@resend.dev>',
         to: email,
         subject: 'Reset Password NusaSkillz',
         html: `
@@ -146,7 +146,7 @@ export class AuthService {
               Reset Password
             </a>
             <p style="color:#888;font-size:12px;margin-top:16px">
-              Tautan berlaku 1 jam. Jika Anda tidak meminta ini, abaikan email ini.
+              Tautan berlaku 15 menit. Jika Anda tidak meminta ini, abaikan email ini.
             </p>
           </div>
         `,

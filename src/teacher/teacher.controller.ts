@@ -99,4 +99,9 @@ export class TeacherController {
   updateAssignments(@Param('id') id: string, @Body('classes') classes: string[]) {
     return this.teacherService.updateAssignments(id, classes ?? []);
   }
+
+  @Delete('courses/:id')
+  deleteCourse(@Param('id') id: string) {
+    return this.teacherService.deleteCourse(id);
+  }
 }

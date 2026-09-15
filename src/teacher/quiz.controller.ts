@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query, Req, UseGuards, Patch } from '@nestjs/common';
 import { QuizService } from './quiz.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -50,5 +50,15 @@ export class PlayQuizController {
   @Post(':id/check')
   check(@Param('id') id: string, @Body() body: { questionId: string; answer: string }) {
     return this.quizService.checkAnswer(id, body.questionId, body.answer);
+  }
+
+  @Get(':id')
+  getForEdit(@Req() req: any, @Param('id') id: string) {
+    return this.quizService.getQuizForEdit(id, req.user.school);
+  }
+
+  @Patch(':id')
+  update(@Req() req: any, @Param('id') id: string, @Body() body: any) {
+    return this.quizService.updateQuiz(id, body, req.user.school);
   }
 }

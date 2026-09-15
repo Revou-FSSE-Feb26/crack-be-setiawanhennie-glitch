@@ -279,4 +279,11 @@ export class TeacherService {
     const { data } = supabase.storage.from('lesson-assets').getPublicUrl(path);
     return { url: data.publicUrl };
   }
+
+    // 🗑️ Delete a course (lessons cascade with it)
+  async deleteCourse(id: string) {
+    const course = await prisma.course.findUnique({ where: { id } });
+    if (!course) throw new NotFoundException('Materi tidak ditemukan');
+    return prisma.course.delete({ where: { id } });
+  }
 }
