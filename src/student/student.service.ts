@@ -12,13 +12,10 @@ export class StudentService {
     });
     if (!user) throw new NotFoundException('Pengguna tidak ditemukan');
 
-    const [progressRows, totalLessons, badges, courses, leaderboard] = await Promise.all([
+    const [progressRows, badges, courses, leaderboard] = await Promise.all([
       prisma.progress.findMany({
         where: { userId, completed: true },
         select: { lessonId: true },
-      }),
-      prisma.lesson.count({
-        where: { course: user.school ? { school: user.school } : {} },
       }),
       prisma.userBadge.findMany({
         where: { userId },
@@ -46,6 +43,8 @@ export class StudentService {
       }),
     ]);
 
+    const totalLessons = courses.reduce((sum: number, c: any) => sum + c.lessons.length, 0);
+
     const completedIds = new Set(progressRows.map((p) => p.lessonId));
 
     const coursesOut = courses.map((c) => {
@@ -67,9 +66,8 @@ export class StudentService {
 
     return {
       user,
-      xpToNext: (user.level + 1) * 500,
+      xpToNext: user.level * 500,
       completedLessons: completedIds.size,
-      totalLessons,
       badges: badges.map((b) => ({ name: b.badge.name, icon: b.badge.icon })),
       totalBadges: BADGES.length,
       courses: coursesOut,
