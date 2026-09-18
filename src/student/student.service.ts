@@ -61,6 +61,7 @@ export class StudentService {
         nextLesson: next?.title ?? null,
         nextLessonId: next?.id ?? null,
         firstLessonId: c.lessons[0]?.id ?? null,
+        description: c.description,
       };
     });
 
@@ -81,7 +82,7 @@ export class StudentService {
   }
 
   // Lesson content + its attached quiz (for the player page)
-  async getLesson(lessonId: string) {
+  async getLesson(lessonId: string, userId?: string) {
     const lesson = await prisma.lesson.findUnique({
       where: { id: lessonId },
       include: {
@@ -98,6 +99,9 @@ export class StudentService {
             _count: { select: { questions: true } },
           },
         },
+        ...(userId
+          ? { progress: { where: { userId }, select: { completed: true, score: true } } }
+          : {}),
       },
     });
     if (!lesson) throw new NotFoundException('Pelajaran tidak ditemukan');

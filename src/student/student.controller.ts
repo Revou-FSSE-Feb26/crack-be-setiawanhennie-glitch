@@ -12,13 +12,13 @@ export class StudentController {
     return this.studentService.getStats(req.user.id);
   }
 
-  @Get('lessons/:id')
-  getLesson(@Param('id') id: string) {
-    return this.studentService.getLesson(id);
-  }
-
   @Post('lessons/:id/complete')
   completeLesson(@Param('id') id: string, @Req() req: any) {
     return this.studentService.completeLesson(id, req.user.id);
+  }
+
+  @Get('lessons/:id')
+  getLesson(@Param('id') id: string, @Req() req: any) {
+    return this.studentService.getLesson(id, req.user.id);
   }
 }
