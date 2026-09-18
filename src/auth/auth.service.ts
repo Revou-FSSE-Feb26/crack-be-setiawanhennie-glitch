@@ -125,7 +125,6 @@ export class AuthService {
 
     async forgotPassword(email: string) {
     const user = await prisma.user.findUnique({ where: { email } });
-    // Never reveal whether the account exists
     if (user) {
       const token = crypto.randomBytes(32).toString('hex');
       const expiry = new Date(Date.now() + 15 * 60 * 1000); 

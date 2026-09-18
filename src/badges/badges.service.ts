@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { prisma } from '../lib/prisma';
 
-// 🏅 All badge definitions — rules evaluated against player stats
+// Badge definitions and rules for awarding them
 export const BADGES = [
   { slug: 'langkah-pertama', name: 'Langkah Pertama', icon: '🌱', description: 'Selesaikan pelajaran pertamamu', check: (s: any) => s.completedLessons >= 1 },
   { slug: 'rajin-belajar', name: 'Rajin Belajar', icon: '📚', description: 'Selesaikan 10 pelajaran', check: (s: any) => s.completedLessons >= 10 },
@@ -59,15 +59,12 @@ export class BadgeService {
 
     for (const def of BADGES) {
       if (!def.check(stats)) continue;
-
-      // Auto-create the badge definition if it doesn't exist yet
       const badge = await prisma.badge.upsert({
         where: { slug: def.slug },
         update: {},
         create: { slug: def.slug, name: def.name, icon: def.icon, description: def.description },
       });
 
-      // Idempotent award (unique [userId, badgeId])
       const existing = await prisma.userBadge.findUnique({
         where: { userId_badgeId: { userId, badgeId: badge.id } },
       });

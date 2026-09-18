@@ -60,7 +60,7 @@ model Course {
 model Lesson {
   id            String    @id @default(cuid())
   title         String
-  content       String    // The actual text/material of the lesson
+  content       String    
   courseId      String
   course        Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
   progress      Progress[]
@@ -133,8 +133,8 @@ model Quiz {
   title     String
   lessonId  String?
   lesson    Lesson?    @relation(fields: [lessonId], references: [id], onDelete: SetNull)
-  timeLimit Int?       // seconds per question (Kuis Cepat); null = santai
-  lives     Int?       // hearts; null = unlimited
+  timeLimit Int?       
+  lives     Int?       
   xpReward  Int        @default(50)
   questions Question[]
   createdAt DateTime   @default(now())
@@ -147,8 +147,8 @@ model Question {
   quiz    Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
   type    QuestionType
   prompt  String
-  options String[]     // choices for MCQ/TF; empty for FILL_BLANK
-  answer  String       // correct choice text / accepted answer
+  options String[]     
+  answer  String       
   points  Int          @default(10)
   order   Int          @default(0)
   pairs   Json?

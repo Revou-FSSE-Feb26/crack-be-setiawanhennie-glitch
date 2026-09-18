@@ -58,7 +58,7 @@ export class TeacherController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: memoryStorage(),
-      limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+      limits: { fileSize: 10 * 1024 * 1024 }, 
     }),
   )
   extract(@UploadedFile() file: any) {

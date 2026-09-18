@@ -3,7 +3,6 @@ import { prisma } from '../lib/prisma';
 
 @Injectable()
 export class CoursesService {
-  // READ (Already done)
   async findAll() {
     return prisma.course.findMany({
       where: { isHidden: false },
@@ -11,7 +10,6 @@ export class CoursesService {
     });
   }
 
-  // CREATE
   async create(data: any) {
     return prisma.course.create({
       data: {
@@ -25,19 +23,16 @@ export class CoursesService {
     });
   }
 
-  // UPDATE
   async update(id: string, data: any) {
     return prisma.course.update({
       where: { id },
       data: {
         title: data.title,
         description: data.description,
-        // Add other fields you want to allow updating
       },
     });
   }
 
-  // DELETE
   async delete(id: string) {
     return prisma.course.delete({
       where: { id },

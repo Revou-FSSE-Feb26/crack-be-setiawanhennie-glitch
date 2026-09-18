@@ -105,7 +105,7 @@ export class QuizService {
             points: true,
             order: true,
             pairs: true,
-            answer: true, // 👈 needed server-side for scrambling, stripped below
+            answer: true, 
           },
           orderBy: { order: 'asc' },
         },
@@ -115,7 +115,7 @@ export class QuizService {
     if (!quiz) throw new NotFoundException('Kuis tidak ditemukan');
 
     quiz.questions = quiz.questions.map((q: any) => {
-      const { answer, ...safe } = q; // 🚫 raw answer NEVER leaves the server
+      const { answer, ...safe } = q;
 
       if (q.type === 'ORDERING') {
         const shuffled = [...q.options];
@@ -230,7 +230,7 @@ export class QuizService {
     return { correct, total, score, xpEarned, maxStreak, results, newBadges };
   }
 
-    // Grade a single question (used by the live "Periksa" button)
+  // Grade a single question
   private gradeOne(q: any, given: string): { correct: boolean; displayAnswer: string } {
     if (q.type === 'FILL_BLANK' || q.type === 'WORD_SCRAMBLE') {
       return {
@@ -262,7 +262,7 @@ export class QuizService {
     return this.gradeOne(q, given ?? '');
   }
 
-    // Teacher fetches a quiz WITH answers (for the editor)
+    // Teacher fetches a quiz WITH answers
   async getQuizForEdit(id: string, school?: string) {
     const quiz = await prisma.quiz.findUnique({
       where: { id },
@@ -273,7 +273,7 @@ export class QuizService {
     return quiz;
   }
 
-  // Update quiz meta + replace all questions atomically
+  // Update quiz & replace all questions atomically
   async updateQuiz(
     id: string,
     data: {

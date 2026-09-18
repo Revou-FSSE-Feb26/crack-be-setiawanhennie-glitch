@@ -4,7 +4,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/guards/roles.decorator';
 
-// Teacher-only: manage quizzes
+// Teacher manage quizzes
 @Controller('teacher/quizzes')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('TEACHER', 'ADMIN')
@@ -27,7 +27,7 @@ export class TeacherQuizController {
   }
 }
 
-// Any logged-in user: play quizzes
+// Any logged-in student can play quizzes
 @Controller('quizzes')
 @UseGuards(JwtAuthGuard)
 export class PlayQuizController {

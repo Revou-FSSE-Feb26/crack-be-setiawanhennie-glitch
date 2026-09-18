@@ -51,7 +51,7 @@ export class TeacherService {
     };
   }
 
-    // 📚 Kelas Saya: students grouped by class
+    // Kelas Saya: students grouped by class
   async getClasses(school?: string) {
     const students = await prisma.user.findMany({
       where: { role: 'STUDENT', ...(school ? { school } : {}) },
@@ -74,7 +74,7 @@ export class TeacherService {
     }));
   }
 
-    // 🎯 Change which classes a course is assigned to
+    // Change which classes a course is assigned to
   async updateAssignments(courseId: string, classes: string[]) {
     const course = await prisma.course.findUnique({ where: { id: courseId } });
     if (!course) throw new NotFoundException('Kursus tidak ditemukan');
@@ -91,7 +91,7 @@ export class TeacherService {
     return { ok: true };
   }
 
-  // 📖 Materi & Kuis: courses + their lessons
+  // Materi & Kuis: courses + their lessons
   async getMaterials(school?: string) {
     return prisma.course.findMany({
       where: { isHidden: false, ...(school ? { school } : {}) },
@@ -103,7 +103,7 @@ export class TeacherService {
     });
   }
 
-  // ✅ Penilaian: latest graded attempts
+  // Penilaian: latest graded attempts
   async getGrading(school?: string) {
     return prisma.progress.findMany({
       where: { completed: true, ...(school ? { user: { school } } : {}) },
@@ -116,7 +116,7 @@ export class TeacherService {
     });
   }
 
-  // 📊 Laporan: per-class performance
+  // Laporan: per-class performance
   async getReports(school?: string) {
     const students = await prisma.user.findMany({
       where: { role: 'STUDENT', ...(school ? { school } : {}) },
@@ -153,7 +153,7 @@ export class TeacherService {
     }));
   }
 
-    // ➕ Create a new course
+    // Create a new course
   async createCourse(data: {
     title: string;
     description: string;
@@ -191,7 +191,7 @@ export class TeacherService {
     return course;
   }
 
-  // ➕ Add a lesson to a course
+  // Add a lesson to a course
   async createLesson(courseId: string, data: { title: string; content: string }) {
     const course = await prisma.course.findUnique({ where: { id: courseId } });
     if (!course) throw new NotFoundException('Kursus tidak ditemukan');
@@ -207,7 +207,7 @@ export class TeacherService {
     }); 
   }
 
-    // 📄 Extract text from uploaded document (file is NOT stored)
+    // Extract text from uploaded document (file is NOT stored)
   async extractText(file: any): Promise<{ text: string }> {
     if (!file) throw new BadRequestException('Tidak ada file diunggah');
     const ext = (file.originalname.split('.').pop() || '').toLowerCase();
@@ -231,7 +231,7 @@ export class TeacherService {
     throw new BadRequestException('Format tidak didukung. Gunakan .pdf, .docx, .txt, atau .md');
   }
 
-  // 👁️ View one lesson (with full content)
+  // View one lesson (with full content)
   async getLesson(id: string) {
     const lesson = await prisma.lesson.findUnique({
       where: { id },
@@ -241,7 +241,7 @@ export class TeacherService {
     return lesson;
   }
 
-  // ✏️ Edit a lesson
+  // Edit a lesson
   async updateLesson(id: string, data: { title?: string; content?: string }) {
     const lesson = await prisma.lesson.findUnique({ where: { id } });
     if (!lesson) throw new NotFoundException('Pelajaran tidak ditemukan');
@@ -254,14 +254,14 @@ export class TeacherService {
     });
   }
 
-  // 🗑️ Delete a lesson
+  // Delete a lesson
   async deleteLesson(id: string) {
     const lesson = await prisma.lesson.findUnique({ where: { id } });
     if (!lesson) throw new NotFoundException('Pelajaran tidak ditemukan');
     return prisma.lesson.delete({ where: { id } });
   }
 
-    // 📷 Upload image to Supabase Storage, return public URL
+    // Upload image to Supabase Storage, return public URL
   async uploadImage(file: any): Promise<{ url: string }> {
     if (!file) throw new BadRequestException('Tidak ada file diunggah');
     const ext = (file.originalname.split('.').pop() || 'png').toLowerCase();
@@ -280,7 +280,7 @@ export class TeacherService {
     return { url: data.publicUrl };
   }
 
-    // 🗑️ Delete a course (lessons cascade with it)
+    // Delete a course (lessons cascade with it)
   async deleteCourse(id: string) {
     const course = await prisma.course.findUnique({ where: { id } });
     if (!course) throw new NotFoundException('Materi tidak ditemukan');

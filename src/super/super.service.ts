@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 
 @Injectable()
 export class SuperService {
-  // 📈 Platform pulse
+  // Platform pulse
   async getStats() {
     const [schools, students, teachers, admins, xpAgg] = await Promise.all([
       prisma.school.count(),
@@ -25,7 +25,7 @@ export class SuperService {
     };
   }
 
-  // 🏫 Schools + per-school user counts
+  // Schools + per-school user counts
   async getSchools() {
     const [schools, counts] = await Promise.all([
       prisma.school.findMany({ orderBy: { createdAt: 'desc' } }),
@@ -42,7 +42,7 @@ export class SuperService {
     });
   }
 
-  // 🎁 Onboard a school + its first admin in ONE transaction
+  // Onboard a school + its first admin in ONE transaction
   async onboardSchool(data: {
     schoolName: string;
     address?: string;
@@ -89,7 +89,7 @@ export class SuperService {
     return { school, code: school.code, adminEmail: data.adminEmail.trim().toLowerCase() };
   }
 
-  // 👥 Admins of one school
+  // Admins of one school
   async getSchoolAdmins(schoolId: string) {
     const school = await prisma.school.findUnique({ where: { id: schoolId } });
     if (!school) throw new NotFoundException('Sekolah tidak ditemukan');
@@ -100,7 +100,7 @@ export class SuperService {
     });
   }
 
-  // ➕ Add another admin to a school
+  // Add another admin to a school
   async addSchoolAdmin(schoolId: string, data: { name: string; email: string; password: string }) {
     const school = await prisma.school.findUnique({ where: { id: schoolId } });
     if (!school) throw new NotFoundException('Sekolah tidak ditemukan');
@@ -121,7 +121,7 @@ export class SuperService {
     });
   }
 
-  // ⛔ Suspend / reactivate a school admin (never touches SUPER_ADMIN)
+  // Suspend / reactivate a school admin (never touches SUPER_ADMIN)
   async toggleAdminSuspend(adminId: string, suspend: boolean) {
     const target = await prisma.user.findUnique({ where: { id: adminId } });
     if (!target || target.role !== 'ADMIN') throw new NotFoundException('Admin sekolah tidak ditemukan');

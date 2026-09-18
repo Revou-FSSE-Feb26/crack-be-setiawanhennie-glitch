@@ -35,7 +35,7 @@ export class ModerationController {
   }
 }
 
-// Any logged-in user can FILE a report
+// Any logged-in user can FILE a report - for further development, not implemented yet
 @Controller('reports')
 export class ReportsController {
   constructor(private readonly moderationService: ModerationService) {}
